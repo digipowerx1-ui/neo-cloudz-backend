@@ -1,0 +1,60 @@
+{
+  "kind": "collectionType",
+  "collectionName": "contact_requests",
+  "info": {
+    "singularName": "contact-request",
+    "pluralName": "contact-requests",
+    "displayName": "contact-request"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "interestType": {
+      "type": "enumeration",
+      "enum": [
+        "on_demand_gpus",
+        "enterprise_bare_metal",
+        "weka_storage",
+        "technical_support",
+        "partnership",
+        "other"
+      ]
+    },
+    "fullName": {
+      "type": "string"
+    },
+    "workEmail": {
+      "type": "email"
+    },
+    "company": {
+      "type": "string"
+    },
+    "budgetRange": {
+      "type": "enumeration",
+      "enum": [
+        "under_5k",
+        "range_5k_20k",
+        "range_20k_100k",
+        "range_100k_500k",
+        "range_500k_plus"
+      ]
+    },
+    "message": {
+      "type": "text"
+    },
+    "progress": {
+      "type": "enumeration",
+      "enum": [
+        "new",
+        "contacted",
+        "in_progress",
+        "closed"
+      ]
+    },
+    "source": {
+      "type": "string"
+    }
+  }
+}
