@@ -34,9 +34,6 @@
     "date": {
       "type": "date"
     },
-    "longDescription": {
-      "type": "richtext"
-    },
     "pdfFile": {
       "type": "media",
       "multiple": false,
@@ -46,6 +43,13 @@
         "videos",
         "audios"
       ]
+    },
+    "longDescription": {
+      "type": "customField",
+      "customField": "plugin::ckeditor5.CKEditor",
+      "options": {
+        "preset": "defaultHtml"
+      }
     }
   }
 }
