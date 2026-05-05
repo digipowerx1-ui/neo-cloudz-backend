@@ -449,7 +449,8 @@ export interface ApiBlogBlog extends Struct.CollectionTypeSchema {
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::blog.blog'> &
       Schema.Attribute.Private;
-    longDescription: Schema.Attribute.Text;
+    longDescription: Schema.Attribute.RichText;
+    pdfFile: Schema.Attribute.Media<'images' | 'files' | 'videos' | 'audios'>;
     publishedAt: Schema.Attribute.DateTime;
     shortDescription: Schema.Attribute.String;
     slug: Schema.Attribute.UID<'title'>;

@@ -21,9 +21,6 @@
     "shortDescription": {
       "type": "string"
     },
-    "longDescription": {
-      "type": "text"
-    },
     "image": {
       "type": "media",
       "multiple": false,
@@ -36,6 +33,19 @@
     },
     "date": {
       "type": "date"
+    },
+    "longDescription": {
+      "type": "richtext"
+    },
+    "pdfFile": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
     }
   }
 }
