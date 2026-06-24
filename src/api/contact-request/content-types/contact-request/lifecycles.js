@@ -10,8 +10,13 @@ module.exports = {
   async afterCreate(event) {
     const { result } = event;
 
+    // Prevent duplicate triggers in Draft & Publish setup (only execute for draft/initial creation)
+    if (result.publishedAt) {
+      return;
+    }
+
     // Run asynchronously to prevent blocking the HTTP response/client submission
-    strapi.db.transaction(async () => {
+    (async () => {
       try {
         await mailchimpService.syncContactToMailchimp(result);
       } catch (err) {
@@ -23,6 +28,6 @@ module.exports = {
       } catch (err) {
         strapi.log.error(`Unhandled exception in contact-request afterCreate lifecycle (Email): ${err.message}`);
       }
-    });
+    })();
   },
 };
