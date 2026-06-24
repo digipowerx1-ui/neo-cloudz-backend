@@ -28,6 +28,9 @@
     "workEmail": {
       "type": "email"
     },
+    "phoneNumber": {
+      "type": "string"
+    },
     "company": {
       "type": "string"
     },

@@ -510,6 +510,7 @@ export interface ApiContactRequestContactRequest
     > &
       Schema.Attribute.Private;
     message: Schema.Attribute.Text;
+    phoneNumber: Schema.Attribute.String;
     progress: Schema.Attribute.Enumeration<
       ['new', 'contacted', 'in_progress', 'closed']
     >;
