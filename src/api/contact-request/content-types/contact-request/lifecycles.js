@@ -26,7 +26,13 @@ module.exports = {
       try {
         await emailService.sendAdminNotification(result);
       } catch (err) {
-        strapi.log.error(`Unhandled exception in contact-request afterCreate lifecycle (Email): ${err.message}`);
+        strapi.log.error(`Unhandled exception in contact-request afterCreate lifecycle (Admin Email): ${err.message}`);
+      }
+
+      try {
+        await emailService.sendUserConfirmation(result);
+      } catch (err) {
+        strapi.log.error(`Unhandled exception in contact-request afterCreate lifecycle (User Confirmation Email): ${err.message}`);
       }
     })();
   },
