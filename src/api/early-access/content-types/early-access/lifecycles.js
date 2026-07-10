@@ -1,6 +1,7 @@
 'use strict';
 
 const mailchimpService = require('../../services/mailchimp');
+const emailService = require('../../services/email');
 
 /**
  * Lifecycle hooks for the early-access content type.
@@ -29,12 +30,6 @@ module.exports = {
   async afterCreate(event) {
     const { result } = event;
 
-    // Guard: In Draft & Publish setups the hook fires for both the initial
-    // draft save and the publish action.  We only want to subscribe once —
-    // on the first (draft) save, before publishedAt is set.
-    if (result.publishedAt) {
-      return;
-    }
 
     // Detach Mailchimp work from the HTTP request/response cycle.
     // This matches the contact-request lifecycle pattern exactly.
@@ -44,6 +39,14 @@ module.exports = {
       } catch (err) {
         strapi.log.error(
           `[EarlyAccess] Unhandled exception in afterCreate lifecycle (Mailchimp): ${err.message}`
+        );
+      }
+
+      try {
+        await emailService.sendAdminNotification(result);
+      } catch (err) {
+        strapi.log.error(
+          `[EarlyAccess] Unhandled exception in afterCreate lifecycle (Admin Email): ${err.message}`
         );
       }
     })();

@@ -10,10 +10,6 @@ module.exports = {
   async afterCreate(event) {
     const { result } = event;
 
-    // Prevent duplicate triggers in Draft & Publish setup (only execute for draft/initial creation)
-    if (result.publishedAt) {
-      return;
-    }
 
     // Run asynchronously to prevent blocking the HTTP response/client submission
     (async () => {
