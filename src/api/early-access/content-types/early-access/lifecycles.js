@@ -2,6 +2,9 @@
 
 const mailchimpService = require('../../services/mailchimp');
 const emailService = require('../../services/email');
+const { isFirstCreate } = require('../../../../utils/dedupe');
+
+const UID = 'api::early-access.early-access';
 
 /**
  * Lifecycle hooks for the early-access content type.
@@ -30,6 +33,15 @@ module.exports = {
   async afterCreate(event) {
     const { result } = event;
 
+    // Draft & publish stores the document as two rows, so this hook fires twice
+    // per signup. Only act on the first one, otherwise the admin notification
+    // (and the Mailchimp sync) runs twice.
+    if (!isFirstCreate(UID, result)) {
+      strapi.log.debug(
+        `[EarlyAccess] Duplicate afterCreate for document ${result.documentId} ignored (draft/publish pair).`
+      );
+      return;
+    }
 
     // Detach Mailchimp work from the HTTP request/response cycle.
     // This matches the contact-request lifecycle pattern exactly.
