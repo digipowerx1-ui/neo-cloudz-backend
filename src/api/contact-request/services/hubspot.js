@@ -39,7 +39,6 @@ const REQUEST_TIMEOUT_MS = 10000;
 const CUSTOM_PROPERTY_NAMES = [
   'neocloudz_interest_type',
   'neocloudz_budget_range',
-  'neocloudz_message',
   'neocloudz_lead_source',
 ];
 
@@ -108,13 +107,27 @@ function splitFullName(fullName) {
 function buildProperties(data, { standardOnly = false } = {}) {
   const { firstName, lastName } = splitFullName(data.fullName);
 
+  const email = (data.workEmail || '').trim().toLowerCase();
+
   const properties = {
     // --- Standard HubSpot contact properties ---
-    email: (data.workEmail || '').trim().toLowerCase(),
+    // These are the same properties the Excel-imported contacts populate, so
+    // form submissions and imported records land in one shared set of fields.
+    //
+    // `email` stays the contact identity key used for search and de-duplication.
+    // `work_email` (label "Work email") is the field the import populated, so it
+    // is written with the same address rather than left blank on the record.
+    email,
+    work_email: email,
     firstname: firstName,
     lastname: lastName,
     phone: (data.phoneNumber || '').trim(),
     company: (data.company || '').trim(),
+    // Standard `message` (label "Message") — the property the Excel import used.
+    // The portal also has a custom `neocloudz_message` carrying the same label,
+    // which is why earlier form submissions appeared blank on the record. New
+    // submissions write the standard property; the custom one is left untouched.
+    message: (data.message || '').trim(),
   };
 
   if (!standardOnly) {
@@ -131,8 +144,6 @@ function buildProperties(data, { standardOnly = false } = {}) {
         'HubSpot and map it in BUDGET_RANGE_TO_HUBSPOT to include it.'
       );
     }
-    // Latest submission wins, matching the existing Mailchimp MESSAGE merge field.
-    properties.neocloudz_message = (data.message || '').trim();
     // `source` arrives through the public API and is therefore untrusted. It is
     // stored as self-reported website input, never as internal attribution.
     properties.neocloudz_lead_source = (data.source || '').trim();
