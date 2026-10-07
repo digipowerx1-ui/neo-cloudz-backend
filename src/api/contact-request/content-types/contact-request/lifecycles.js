@@ -1,6 +1,7 @@
 'use strict';
 
 const mailchimpService = require('../../services/mailchimp');
+const hubspotService = require('../../services/hubspot');
 const emailService = require('../../services/email');
 const { isFirstCreate } = require('../../../../utils/dedupe');
 
@@ -29,6 +30,12 @@ module.exports = {
         await mailchimpService.syncContactToMailchimp(result);
       } catch (err) {
         strapi.log.error(`Unhandled exception in contact-request afterCreate lifecycle (Mailchimp): ${err.message}`);
+      }
+
+      try {
+        await hubspotService.syncContactToHubSpot(result);
+      } catch (err) {
+        strapi.log.error(`Unhandled exception in contact-request afterCreate lifecycle (HubSpot): ${err.message}`);
       }
 
       try {
