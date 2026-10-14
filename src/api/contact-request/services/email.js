@@ -13,6 +13,48 @@ const resendService = require('../../../services/resend');
  */
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Escapes characters that are sensitive in HTML context to prevent XSS in email clients.
+ * @param {string|null|undefined} str
+ * @returns {string}
+ */
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * Renders a two-column detail row for NeoCloudz emails.
+ */
+function renderDetailRow(label, rawValue) {
+  if (rawValue === undefined || rawValue === null || String(rawValue).trim() === '') {
+    return '';
+  }
+  return `
+    <tr>
+      <td class="details-label" width="32%"
+        style="padding: 12px; background-color: #000000; border: 1px solid #00ff66; border-radius: 4px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 600; color: #ffffff;">
+        ${escapeHtml(label)}
+      </td>
+      <td class="details-spacer" width="2%" style="font-size: 0; line-height: 0;">&nbsp;</td>
+      <td class="details-value" width="66%"
+        style="padding: 12px; background-color: #000000; border: 1px solid #00ff66; border-radius: 4px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; color: #a3a3a3;">
+        ${escapeHtml(String(rawValue))}
+      </td>
+    </tr>
+    <tr><td height="8" colspan="3" style="font-size: 0; line-height: 0;">&nbsp;</td></tr>
+  `;
+}
+
+// ---------------------------------------------------------------------------
 // 1. ADMIN NOTIFICATION
 // ---------------------------------------------------------------------------
 
@@ -21,16 +63,21 @@ const resendService = require('../../../services/resend');
  * @param {Object} data - The contact request entry data
  */
 async function sendAdminNotification(data) {
+  const isEarlyAccess = data.requestType === 'early_access' || data.productInterest === 'token_factory';
+  if (isEarlyAccess) {
+    return sendEarlyAccessAdminNotification(data);
+  }
+
   const adminEmail = process.env.ADMIN_EMAIL || 'hello@neocloudz.com';
 
-  const fullName     = data.fullName     || 'N/A';
-  const workEmail    = data.workEmail    || 'N/A';
-  const phoneNumber  = data.phoneNumber  || 'N/A';
-  const company      = data.company      || 'N/A';
-  const interestType = data.interestType || 'N/A';
-  const budgetRange  = data.budgetRange  || 'N/A';
-  const message      = data.message      || 'No message provided.';
-  const source       = data.source       || 'N/A';
+  const fullName     = escapeHtml(data.fullName     || 'N/A');
+  const workEmail    = escapeHtml(data.workEmail    || 'N/A');
+  const phoneNumber  = escapeHtml(data.phoneNumber  || 'N/A');
+  const company      = escapeHtml(data.company      || 'N/A');
+  const interestType = escapeHtml(data.interestType || 'N/A');
+  const budgetRange  = escapeHtml(data.budgetRange  || 'N/A');
+  const message      = escapeHtml(data.message      || 'No message provided.');
+  const source       = escapeHtml(data.source       || 'N/A');
 
   const emailHtml = `<!DOCTYPE html>
 <html lang="en">
@@ -337,13 +384,18 @@ ${message}
  * @param {Object} data - The contact request entry data
  */
 async function sendUserConfirmation(data) {
-  const fullName     = data.fullName     || 'there';
-  const workEmail    = data.workEmail    || '';
-  const interestType = data.interestType || 'N/A';
-  const budgetRange  = data.budgetRange  || 'N/A';
-  const company      = data.company      || 'N/A';
-  const message      = data.message      || 'No message provided.';
-  const source       = data.source       || 'N/A';
+  const isEarlyAccess = data.requestType === 'early_access' || data.productInterest === 'token_factory';
+  if (isEarlyAccess) {
+    return sendEarlyAccessUserConfirmation(data);
+  }
+
+  const fullName     = escapeHtml(data.fullName     || 'there');
+  const workEmail    = (data.workEmail || '').trim();
+  const interestType = escapeHtml(data.interestType || 'N/A');
+  const budgetRange  = escapeHtml(data.budgetRange  || 'N/A');
+  const company      = escapeHtml(data.company      || 'N/A');
+  const message      = escapeHtml(data.message      || 'No message provided.');
+  const source       = escapeHtml(data.source       || 'N/A');
 
   if (!workEmail) {
     strapi.log.warn('[Email] User confirmation skipped: no workEmail provided in contact request.');
@@ -765,10 +817,304 @@ https://neocloudz.com
 }
 
 // ---------------------------------------------------------------------------
+// 3. TOKEN FACTORY EARLY ACCESS NOTIFICATIONS
+// ---------------------------------------------------------------------------
+
+/**
+ * Sends a dedicated Token Factory Early Access admin qualification notification.
+ * @param {Object} data - The contact request entry data
+ */
+async function sendEarlyAccessAdminNotification(data) {
+  const adminEmail = process.env.ADMIN_EMAIL || 'hello@neocloudz.com';
+
+  const fullName             = data.fullName || 'N/A';
+  const workEmail            = data.workEmail || 'N/A';
+  const company              = data.company || 'N/A';
+  const phoneNumber          = data.phoneNumber || '';
+  const message              = data.message || 'No workload description provided.';
+  const modelsOfInterest     = data.modelsOfInterest || '';
+  const endpointPreference   = data.endpointPreference || 'undecided';
+  const expectedUsage        = data.expectedUsage || '';
+  const targetStartDate      = data.targetStartDate || '';
+  const interestedInGtcBerlin = data.interestedInGtcBerlin ? 'Yes' : 'No';
+  const marketingOptIn       = data.marketingOptIn ? 'Yes (Opted In)' : 'No';
+  const originatingPage      = data.originatingPage || '';
+  const originatingCta       = data.originatingCta || '';
+  const utmSource            = data.utmSource || '';
+  const utmMedium            = data.utmMedium || '';
+  const utmCampaign          = data.utmCampaign || '';
+  const utmTerm              = data.utmTerm || '';
+  const utmContent           = data.utmContent || '';
+
+  const emailHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Token Factory Early Access Request</title>
+  <style>
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    table { border-collapse: collapse !important; }
+    body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #050505; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #ffffff; }
+    @media screen and (max-width: 600px) {
+      .email-container { width: 100% !important; padding-left: 10px !important; padding-right: 10px !important; }
+      .details-table td { display: block !important; width: 100% !important; box-sizing: border-box !important; }
+      .details-table tr { margin-bottom: 10px !important; display: block !important; }
+      .details-spacer { display: none !important; }
+    }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #050505; color: #ffffff;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #050505; table-layout: fixed;">
+    <tr>
+      <td align="center" style="padding: 20px 0;">
+        <table border="0" cellpadding="0" cellspacing="0" width="600" class="email-container" style="background-color: #050505; max-width: 600px; width: 100%;">
+          <tr>
+            <td align="left" style="padding: 20px 20px 10px 20px;">
+              <img src="https://www.neocloudz.com/images/neocloudz-logo.png" alt="NeoCloudz" height="45" style="display: block; height: 100px; width: auto;" />
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 10px 20px 20px 20px;">
+              <h1 style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 26px; font-weight: 700; line-height: 1.3; color: #ffffff; text-align: center;">
+                Token Factory Early Access<br>
+                <span style="color: #00ff66;">Request Received</span>
+              </h1>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 0 20px 20px 20px;">
+              <table border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="background-color: #00ff6622; border: 1px solid #00ff66; border-radius: 20px; padding: 8px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 600; color: #00ff66; letter-spacing: 1px; text-transform: uppercase;">
+                    Token Factory — Prospect Qualification
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 10px 20px;">
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" class="details-table">
+                ${renderDetailRow('Product Interest', 'Token Factory')}
+                ${renderDetailRow('Request Type', 'Early Access')}
+                ${renderDetailRow('Full Name', fullName)}
+                ${renderDetailRow('Work Email', workEmail)}
+                ${renderDetailRow('Company', company)}
+                ${renderDetailRow('Phone', phoneNumber)}
+                ${renderDetailRow('Use Case / Workload', message)}
+                ${renderDetailRow('Models of Interest', modelsOfInterest)}
+                ${renderDetailRow('Endpoint Preference', endpointPreference)}
+                ${renderDetailRow('Expected Usage', expectedUsage)}
+                ${renderDetailRow('Target Start Date', targetStartDate)}
+                ${renderDetailRow('Meet at GTC Berlin', interestedInGtcBerlin)}
+                ${renderDetailRow('Marketing Consent', marketingOptIn)}
+                ${renderDetailRow('Originating Page', originatingPage)}
+                ${renderDetailRow('Originating CTA', originatingCta)}
+                ${renderDetailRow('UTM Source', utmSource)}
+                ${renderDetailRow('UTM Medium', utmMedium)}
+                ${renderDetailRow('UTM Campaign', utmCampaign)}
+                ${renderDetailRow('UTM Term', utmTerm)}
+                ${renderDetailRow('UTM Content', utmContent)}
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 30px 20px 10px 20px;">
+              <hr style="border: 0; border-top: 1px solid #222222; margin: 0;">
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 10px 20px 20px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 12px; line-height: 1.6; text-align: center;">
+              <p style="margin: 0 0 5px 0;"><a href="mailto:hello@neocloudz.com" style="color: #00ff66; text-decoration: underline;">hello@neocloudz.com</a></p>
+              <p style="margin: 0; color: #666666;">&copy; 2026 NeoCloudz Inc. All rights reserved.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const textBody = `
+Token Factory Early Access Request
+===================================
+Product:             Token Factory
+Request Type:        Early Access
+Full Name:           ${fullName}
+Work Email:          ${workEmail}
+Company:             ${company}
+Phone:               ${phoneNumber || 'N/A'}
+Endpoint Preference: ${endpointPreference}
+Target Start Date:   ${targetStartDate || 'N/A'}
+GTC Berlin Meeting:  ${interestedInGtcBerlin}
+Marketing Opt-In:    ${marketingOptIn}
+
+Models of Interest:
+${modelsOfInterest || 'N/A'}
+
+Expected Usage:
+${expectedUsage || 'N/A'}
+
+Use Case / Workload:
+${message}
+
+Attribution:
+  Originating Page: ${originatingPage || 'N/A'}
+  Originating CTA:  ${originatingCta || 'N/A'}
+  UTM Source:       ${utmSource || 'N/A'}
+  UTM Medium:       ${utmMedium || 'N/A'}
+  UTM Campaign:     ${utmCampaign || 'N/A'}
+  UTM Term:         ${utmTerm || 'N/A'}
+  UTM Content:      ${utmContent || 'N/A'}
+  `.trim();
+
+  strapi.log.info(`[Email] Sending Token Factory early access admin notification to ${adminEmail} for ${workEmail}...`);
+
+  await resendService.send({
+    to: adminEmail,
+    subject: `Token Factory Early Access Request - ${fullName} (${company})`,
+    html: emailHtml,
+    text: textBody,
+  });
+
+  strapi.log.info(`[Email] Token Factory early access admin notification sent to ${adminEmail}.`);
+}
+
+/**
+ * Sends a dedicated Token Factory Early Access acknowledgement to the submitter.
+ * @param {Object} data - The contact request entry data
+ */
+async function sendEarlyAccessUserConfirmation(data) {
+  const fullName           = data.fullName || 'there';
+  const workEmail          = (data.workEmail || '').trim();
+  const company            = data.company || '';
+  const message            = data.message || '';
+  const endpointPreference = data.endpointPreference || 'undecided';
+  const modelsOfInterest   = data.modelsOfInterest || '';
+
+  if (!workEmail) {
+    strapi.log.warn('[Email] Early access user confirmation skipped: no workEmail provided.');
+    return;
+  }
+
+  const emailHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thanks for requesting Token Factory Early Access</title>
+  <style>
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    table { border-collapse: collapse !important; }
+    body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #050505; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #ffffff; }
+    @media screen and (max-width: 600px) {
+      .email-container { width: 100% !important; padding-left: 10px !important; padding-right: 10px !important; }
+      .details-table td { display: block !important; width: 100% !important; box-sizing: border-box !important; }
+      .details-table tr { margin-bottom: 10px !important; display: block !important; }
+      .details-spacer { display: none !important; }
+    }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #050505; color: #ffffff;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #050505; table-layout: fixed;">
+    <tr>
+      <td align="center" style="padding: 20px 0;">
+        <table border="0" cellpadding="0" cellspacing="0" width="600" class="email-container" style="background-color: #050505; max-width: 600px; width: 100%;">
+          <tr>
+            <td align="left" style="padding: 20px 20px 10px 20px;">
+              <img src="https://www.neocloudz.com/images/neocloudz-logo.png" alt="NeoCloudz" height="45" style="display: block; height: 100px; width: auto;" />
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 10px 20px 20px 20px;">
+              <h1 style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 26px; font-weight: 700; line-height: 1.3; color: #ffffff; text-align: center;">
+                Token Factory Early Access<br>
+                <span style="color: #00ff66;">Request Received</span>
+              </h1>
+            </td>
+          </tr>
+          <tr>
+            <td align="left" style="padding: 10px 20px; font-size: 15px; line-height: 1.6; color: #e5e5e5;">
+              <p>Hi ${escapeHtml(fullName)},</p>
+              <p>Thank you for your interest in NeoCloudz Token Factory. We’ve received your early-access request, and our team will contact you about next steps.</p>
+              <p>Below is a summary of the details you submitted:</p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 10px 20px;">
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" class="details-table">
+                ${renderDetailRow('Product', 'Token Factory')}
+                ${renderDetailRow('Company', company)}
+                ${renderDetailRow('Endpoint Preference', endpointPreference)}
+                ${renderDetailRow('Models of Interest', modelsOfInterest)}
+                ${renderDetailRow('Use Case / Workload', message)}
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td align="left" style="padding: 15px 20px; font-size: 13px; line-height: 1.5; color: #888888;">
+              <p style="margin: 0;">Please note: This email confirms receipt of your early-access application. Early access is subject to onboarding review and availability.</p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 30px 20px 10px 20px;">
+              <hr style="border: 0; border-top: 1px solid #222222; margin: 0;">
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 10px 20px 20px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 12px; line-height: 1.6; text-align: center;">
+              <p style="margin: 0 0 5px 0;"><a href="mailto:hello@neocloudz.com" style="color: #00ff66; text-decoration: underline;">hello@neocloudz.com</a></p>
+              <p style="margin: 0; color: #666666;">&copy; 2026 NeoCloudz Inc. All rights reserved.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const textBody = `
+Hi ${fullName},
+
+Thank you for your interest in NeoCloudz Token Factory. We’ve received your early-access request, and our team will contact you about next steps.
+
+Your submission details:
+  Product:             Token Factory
+  Company:             ${company}
+  Endpoint Preference: ${endpointPreference}
+  Models of Interest:  ${modelsOfInterest || 'N/A'}
+  Use Case / Workload: ${message}
+
+Please note: This email confirms receipt of your early-access application. Early access is subject to onboarding review and availability.
+
+— The NeoCloudz Team
+https://neocloudz.com
+  `.trim();
+
+  strapi.log.info(`[Email] Sending early access user confirmation to ${workEmail}...`);
+
+  await resendService.send({
+    to: workEmail,
+    subject: `Thanks for your interest in NeoCloudz Token Factory, ${fullName}!`,
+    html: emailHtml,
+    text: textBody,
+  });
+
+  strapi.log.info(`[Email] Early access user confirmation sent to ${workEmail}.`);
+}
+
+// ---------------------------------------------------------------------------
 // Exports
 // ---------------------------------------------------------------------------
 
 module.exports = {
   sendAdminNotification,
   sendUserConfirmation,
+  sendEarlyAccessAdminNotification,
+  sendEarlyAccessUserConfirmation,
 };

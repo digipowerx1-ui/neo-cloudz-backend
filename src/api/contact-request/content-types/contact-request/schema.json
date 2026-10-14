@@ -58,6 +58,66 @@
     },
     "source": {
       "type": "string"
+    },
+    "requestType": {
+      "type": "enumeration",
+      "enum": [
+        "early_access",
+        "general_contact"
+      ],
+      "default": "general_contact"
+    },
+    "productInterest": {
+      "type": "enumeration",
+      "enum": [
+        "token_factory"
+      ]
+    },
+    "modelsOfInterest": {
+      "type": "text"
+    },
+    "endpointPreference": {
+      "type": "enumeration",
+      "enum": [
+        "api_inference",
+        "dedicated_endpoint",
+        "undecided"
+      ]
+    },
+    "expectedUsage": {
+      "type": "text"
+    },
+    "targetStartDate": {
+      "type": "date"
+    },
+    "interestedInGtcBerlin": {
+      "type": "boolean",
+      "default": false
+    },
+    "marketingOptIn": {
+      "type": "boolean",
+      "default": false
+    },
+    "originatingPage": {
+      "type": "string"
+    },
+    "originatingCta": {
+      "type": "string"
+    },
+    "utmSource": {
+      "type": "string"
+    },
+    "utmMedium": {
+      "type": "string"
+    },
+    "utmCampaign": {
+      "type": "string"
+    },
+    "utmTerm": {
+      "type": "string"
+    },
+    "utmContent": {
+      "type": "string"
     }
   }
 }

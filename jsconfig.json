@@ -1,8 +1,13 @@
 {
   "compilerOptions": {
-    "moduleResolution": "nodenext",
+    "module": "commonjs",
+    "moduleResolution": "node",
     "target": "ES2021",
-    "checkJs": true,
-    "allowJs": true
-  }
+    "checkJs": false,
+    "allowJs": true,
+    "skipLibCheck": true,
+    "maxNodeModuleJsDepth": 0
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", ".tmp", "dist", "build", ".strapi"]
 }

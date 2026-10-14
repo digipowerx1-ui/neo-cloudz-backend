@@ -492,7 +492,13 @@ export interface ApiContactRequestContactRequest
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    endpointPreference: Schema.Attribute.Enumeration<
+      ['api_inference', 'dedicated_endpoint', 'undecided']
+    >;
+    expectedUsage: Schema.Attribute.Text;
     fullName: Schema.Attribute.String;
+    interestedInGtcBerlin: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
     interestType: Schema.Attribute.Enumeration<
       [
         'on_demand_gpus',
@@ -509,16 +515,32 @@ export interface ApiContactRequestContactRequest
       'api::contact-request.contact-request'
     > &
       Schema.Attribute.Private;
+    marketingOptIn: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
     message: Schema.Attribute.Text;
+    modelsOfInterest: Schema.Attribute.Text;
+    originatingCta: Schema.Attribute.String;
+    originatingPage: Schema.Attribute.String;
     phoneNumber: Schema.Attribute.String;
+    productInterest: Schema.Attribute.Enumeration<['token_factory']>;
     progress: Schema.Attribute.Enumeration<
       ['new', 'contacted', 'in_progress', 'closed']
     >;
     publishedAt: Schema.Attribute.DateTime;
+    requestType: Schema.Attribute.Enumeration<
+      ['early_access', 'general_contact']
+    > &
+      Schema.Attribute.DefaultTo<'general_contact'>;
     source: Schema.Attribute.String;
+    targetStartDate: Schema.Attribute.Date;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    utmCampaign: Schema.Attribute.String;
+    utmContent: Schema.Attribute.String;
+    utmMedium: Schema.Attribute.String;
+    utmSource: Schema.Attribute.String;
+    utmTerm: Schema.Attribute.String;
     workEmail: Schema.Attribute.Email;
   };
 }

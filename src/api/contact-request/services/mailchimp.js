@@ -33,6 +33,16 @@ module.exports = {
         return;
       }
 
+      const isEarlyAccess = data.requestType === 'early_access' || data.productInterest === 'token_factory';
+
+      // For Early Access requests, do not subscribe or sync unless explicit marketing consent was given
+      if (isEarlyAccess && data.marketingOptIn !== true) {
+        strapi.log.info(
+          `[Mailchimp] Contact ${email} submitted an Early Access request without marketing consent (marketingOptIn: false). Skipping Mailchimp sync.`
+        );
+        return;
+      }
+
       const subscriberHash = crypto.createHash('md5').update(email).digest('hex');
 
       // Map fields according to specifications
@@ -52,15 +62,22 @@ module.exports = {
         merge_fields: mergeFields,
       });
 
-      // Add the tag to trigger the Mailchimp Customer Journey
-      await mailchimp.lists.updateListMemberTags(audienceId, subscriberHash, {
-        tags: [
-          {
-            name: 'contact-form-lead',
-            status: 'active',
-          },
-        ],
-      });
+      // Tags to apply: always include contact-form-lead; add token-factory-early-access if applicable
+      const tags = [
+        {
+          name: 'contact-form-lead',
+          status: 'active',
+        },
+      ];
+
+      if (isEarlyAccess) {
+        tags.push({
+          name: 'token-factory-early-access',
+          status: 'active',
+        });
+      }
+
+      await mailchimp.lists.updateListMemberTags(audienceId, subscriberHash, { tags });
 
       strapi.log.info(`Successfully synced contact ${email} to Mailchimp and tagged as "contact-form-lead".`);
     } catch (error) {

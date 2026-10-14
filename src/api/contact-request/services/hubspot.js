@@ -40,6 +40,20 @@ const CUSTOM_PROPERTY_NAMES = [
   'neocloudz_interest_type',
   'neocloudz_budget_range',
   'neocloudz_lead_source',
+  'neocloudz_request_type',
+  'neocloudz_product_interest',
+  'neocloudz_models_of_interest',
+  'neocloudz_endpoint_preference',
+  'neocloudz_expected_usage',
+  'neocloudz_target_start_date',
+  'neocloudz_interested_in_gtc_berlin',
+  'neocloudz_originating_page',
+  'neocloudz_originating_cta',
+  'neocloudz_utm_source',
+  'neocloudz_utm_medium',
+  'neocloudz_utm_campaign',
+  'neocloudz_utm_term',
+  'neocloudz_utm_content',
 ];
 
 /**
@@ -146,7 +160,26 @@ function buildProperties(data, { standardOnly = false } = {}) {
     }
     // `source` arrives through the public API and is therefore untrusted. It is
     // stored as self-reported website input, never as internal attribution.
-    properties.neocloudz_lead_source = (data.source || '').trim();
+    properties.neocloudz_lead_source = (data.source || data.originatingCta || data.utmSource || '').trim();
+
+    // Early Access and campaign attribution custom properties
+    properties.neocloudz_request_type = data.requestType || '';
+    properties.neocloudz_product_interest = data.productInterest || '';
+    properties.neocloudz_models_of_interest = (data.modelsOfInterest || '').trim();
+    properties.neocloudz_endpoint_preference = data.endpointPreference || '';
+    properties.neocloudz_expected_usage = (data.expectedUsage || '').trim();
+    properties.neocloudz_target_start_date = data.targetStartDate ? String(data.targetStartDate).trim() : '';
+    properties.neocloudz_interested_in_gtc_berlin =
+      data.interestedInGtcBerlin !== undefined && data.interestedInGtcBerlin !== null
+        ? String(Boolean(data.interestedInGtcBerlin))
+        : '';
+    properties.neocloudz_originating_page = (data.originatingPage || '').trim();
+    properties.neocloudz_originating_cta = (data.originatingCta || '').trim();
+    properties.neocloudz_utm_source = (data.utmSource || '').trim();
+    properties.neocloudz_utm_medium = (data.utmMedium || '').trim();
+    properties.neocloudz_utm_campaign = (data.utmCampaign || '').trim();
+    properties.neocloudz_utm_term = (data.utmTerm || '').trim();
+    properties.neocloudz_utm_content = (data.utmContent || '').trim();
   }
 
   // Drop empty values so an update never overwrites existing HubSpot data.
