@@ -36,13 +36,6 @@ const MAX_LENGTHS = {
   message: 5000,
   modelsOfInterest: 2000,
   expectedUsage: 5000,
-  originatingPage: 500,
-  originatingCta: 200,
-  utmSource: 200,
-  utmMedium: 200,
-  utmCampaign: 200,
-  utmTerm: 200,
-  utmContent: 200,
   source: 200,
 };
 

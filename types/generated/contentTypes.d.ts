@@ -519,8 +519,6 @@ export interface ApiContactRequestContactRequest
       Schema.Attribute.DefaultTo<false>;
     message: Schema.Attribute.Text;
     modelsOfInterest: Schema.Attribute.Text;
-    originatingCta: Schema.Attribute.String;
-    originatingPage: Schema.Attribute.String;
     phoneNumber: Schema.Attribute.String;
     productInterest: Schema.Attribute.Enumeration<['token_factory']>;
     progress: Schema.Attribute.Enumeration<
@@ -536,11 +534,6 @@ export interface ApiContactRequestContactRequest
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    utmCampaign: Schema.Attribute.String;
-    utmContent: Schema.Attribute.String;
-    utmMedium: Schema.Attribute.String;
-    utmSource: Schema.Attribute.String;
-    utmTerm: Schema.Attribute.String;
     workEmail: Schema.Attribute.Email;
   };
 }

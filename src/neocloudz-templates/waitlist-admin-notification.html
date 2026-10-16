@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
+  <meta name="color-scheme" content="dark">
+  <meta name="supported-color-schemes" content="dark">
+  <title>NeoCloudz — Waitlist Admin Notification</title>
+
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+
+  <style type="text/css">
+    /* ============================================
+       RESET
+       ============================================ */
+    html,
+    body {
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+      background-color: #000000;
+    }
+
+    * {
+      -ms-text-size-adjust: 100%;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    table,
+    td {
+      mso-table-lspace: 0pt !important;
+      mso-table-rspace: 0pt !important;
+      border-collapse: collapse !important;
+      border-spacing: 0 !important;
+    }
+
+    img {
+      -ms-interpolation-mode: bicubic;
+      border: 0;
+      height: auto;
+      line-height: 100%;
+      outline: none;
+      text-decoration: none;
+      display: block;
+    }
+
+    a {
+      text-decoration: none;
+    }
+
+    /* Gmail / Outlook.com blue-link fixes */
+    a[x-apple-data-detectors],
+    .unstyle-auto-detected-links a,
+    .aBn {
+      border-bottom: 0 !important;
+      cursor: default !important;
+      color: inherit !important;
+      text-decoration: none !important;
+      font-size: inherit !important;
+      font-family: inherit !important;
+      font-weight: inherit !important;
+      line-height: inherit !important;
+    }
+
+    /* Outlook background fix */
+    .body-bg {
+      background-color: #000000;
+    }
+
+    /* ============================================
+       BASE TYPOGRAPHY
+       ============================================ */
+    .font-sans {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .font-mono {
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, 'Courier New', Courier, monospace;
+    }
+
+    /* ============================================
+       RESPONSIVE — TABLET  (max 640px)
+       ============================================ */
+    @media screen and (max-width: 640px) {
+      .wrapper-pad {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+      }
+
+      .container {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+
+      .px-outer {
+        padding-left: 28px !important;
+        padding-right: 28px !important;
+      }
+
+      .headline {
+        font-size: 30px !important;
+        line-height: 38px !important;
+      }
+
+      .logo-img {
+        width: 190px !important;
+        height: auto !important;
+      }
+
+      .badge-text {
+        font-size: 10px !important;
+        letter-spacing: 1px !important;
+      }
+
+      /* Contact cards stack */
+      .contact-card {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 0 12px 0 !important;
+      }
+
+      .contact-card-inner {
+        width: 100% !important;
+      }
+
+      /* Header row: logo + label stack */
+      .hdr-cell {
+        display: block !important;
+        width: 100% !important;
+        text-align: left !important;
+        padding: 0 !important;
+      }
+
+      .hdr-label {
+        padding-top: 14px !important;
+        text-align: left !important;
+      }
+    }
+
+    /* ============================================
+       RESPONSIVE — MOBILE  (max 480px)
+       ============================================ */
+    @media screen and (max-width: 480px) {
+      .px-outer {
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+      }
+
+      .headline {
+        font-size: 25px !important;
+        line-height: 33px !important;
+      }
+
+      .logo-img {
+        width: 160px !important;
+      }
+
+      /* Detail rows become stacked label / value */
+      .detail-label,
+      .detail-value {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        text-align: left !important;
+      }
+
+      .detail-label {
+        padding: 16px 18px 4px 18px !important;
+      }
+
+      .detail-value {
+        padding: 0 18px 16px 18px !important;
+        word-break: break-word !important;
+      }
+
+      .detail-value-text {
+        font-size: 14px !important;
+      }
+
+      .success-text {
+        font-size: 15px !important;
+        line-height: 23px !important;
+      }
+
+      .site-link {
+        font-size: 15px !important;
+        word-break: break-all !important;
+      }
+
+      .footer-note {
+        font-size: 11px !important;
+        line-height: 19px !important;
+      }
+
+      .social-icon {
+        width: 38px !important;
+        height: 38px !important;
+      }
+
+      .section-pad-top {
+        padding-top: 30px !important;
+      }
+
+      .section-pad-bottom {
+        padding-bottom: 30px !important;
+      }
+    }
+
+    /* ============================================
+       RESPONSIVE — SMALL MOBILE (max 360px)
+       ============================================ */
+    @media screen and (max-width: 360px) {
+      .px-outer {
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+      }
+
+      .headline {
+        font-size: 22px !important;
+        line-height: 30px !important;
+      }
+
+      .logo-img {
+        width: 142px !important;
+      }
+    }
+
+    /* ============================================
+       DARK MODE (already dark — lock it in)
+       ============================================ */
+    @media (prefers-color-scheme: dark) {
+      .body-bg,
+      body {
+        background-color: #000000 !important;
+      }
+    }
+  </style>
+</head>
+
+<body class="body-bg" style="margin:0; padding:0; width:100%; background-color:#000000;">
+
+  <!-- Preheader (hidden preview text) -->
+  <div style="display:none; font-size:1px; color:#000000; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden; mso-hide:all;">
+    A new user has joined the NeoCloudz Token Factory waitlist.
+    &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847; &#8199;&#65279;&#847;
+  </div>
+
+  <!-- OUTER WRAPPER -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#000000;">
+    <tr>
+      <td align="center" class="wrapper-pad" style="padding:0;">
+
+        <!--[if mso]>
+        <table role="presentation" width="640" cellpadding="0" cellspacing="0" border="0" align="center"><tr><td>
+        <![endif]-->
+
+        <!-- MAIN CONTAINER -->
+        <table role="presentation" class="container" width="640" cellpadding="0" cellspacing="0" border="0"
+          style="width:100%; max-width:640px; background-color:#060a07;">
+
+          <!-- ============ HEADER BAR ============ -->
+          <tr>
+            <td class="px-outer" style="background-color:#0a0f0b; padding:26px 40px; border-bottom:1px solid #16261a;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td class="hdr-cell" align="left" valign="middle" width="60%" style="padding:0;">
+                    <img src="https://neocloudz-git-branch-nam-digi-power-xs-projects.vercel.app/Asset%201.png"
+                      width="220" alt="NeoCloudz" class="logo-img"
+                      style="display:block; width:220px; max-width:220px; height:auto; border:0; outline:none;">
+                  </td>
+                  <td class="hdr-cell hdr-label font-mono" align="right" valign="middle" width="40%" style="padding:0;">
+                    <span class="font-mono badge-text"
+                      style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,'Courier New',Courier,monospace; font-size:11px; letter-spacing:1.6px; color:#8d9a90; text-transform:uppercase;">ADMIN&nbsp;NOTIFICATION</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ============ HERO ============ -->
+          <tr>
+            <td class="px-outer section-pad-top section-pad-bottom"
+              style="background-color:#040d06; padding:44px 40px 46px 40px;">
+
+              <!-- eyebrow -->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px 0;">
+                <tr>
+                  <td valign="middle" style="padding:0 9px 0 0; line-height:0;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td width="7" height="7" style="width:7px; height:7px; background-color:#22e06a; border-radius:50%; font-size:0; line-height:0;">&nbsp;</td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td valign="middle" style="padding:0;">
+                    <span class="font-mono badge-text"
+                      style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,'Courier New',Courier,monospace; font-size:12px; letter-spacing:1.7px; color:#22e06a; text-transform:uppercase;">TOKEN&nbsp;FACTORY&nbsp;/&nbsp;WAITLIST</span>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- headline -->
+              <h1 class="font-sans headline"
+                style="margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:36px; line-height:45px; font-weight:800; color:#ffffff; letter-spacing:-0.6px;">
+                A new user has joined the <span style="color:#22e06a;">NeoCloudz Token&nbsp;Factory</span> waitlist.
+              </h1>
+            </td>
+          </tr>
+
+          <!-- ============ BODY ============ -->
+          <tr>
+            <td class="px-outer section-pad-top section-pad-bottom"
+              style="background-color:#060a07; padding:40px 40px 42px 40px;">
+
+              <!-- ---- DETAILS TABLE ---- -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                style="width:100%; border:1px solid #1b2a20; border-radius:10px; background-color:#0a110c; overflow:hidden;">
+
+                <!-- Email -->
+                <tr>
+                  <td class="detail-label font-mono" width="32%" valign="middle"
+                    style="padding:22px 24px; border-bottom:1px solid #1b2a20; font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,'Courier New',Courier,monospace; font-size:13px; letter-spacing:0.5px; color:#8d9a90;">
+                    Email
+                  </td>
+                  <td class="detail-value" width="68%" valign="middle"
+                    style="padding:22px 24px 22px 0; border-bottom:1px solid #1b2a20; word-break:break-word;">
+                    <a href="mailto:{{USER_EMAIL}}" class="font-sans detail-value-text"
+                      style="font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:16px; line-height:24px; color:#22e06a; text-decoration:none; word-break:break-word;">{{USER_EMAIL}}</a>
+                  </td>
+                </tr>
+
+                <!-- Name -->
+                <tr>
+                  <td class="detail-label font-mono" width="32%" valign="middle"
+                    style="padding:22px 24px; border-bottom:1px solid #1b2a20; font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,'Courier New',Courier,monospace; font-size:13px; letter-spacing:0.5px; color:#8d9a90;">
+                    Name
+                  </td>
+                  <td class="detail-value" width="68%" valign="middle"
+                    style="padding:22px 24px 22px 0; border-bottom:1px solid #1b2a20;">
+                    <span class="font-mono detail-value-text"
+                      style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,'Courier New',Courier,monospace; font-size:15px; line-height:24px; color:#e4ece6;">{{USER_NAME}}</span>
+                  </td>
+                </tr>
+
+                <!-- Date & Time -->
+                <tr>
+                  <td class="detail-label font-mono" width="32%" valign="middle"
+                    style="padding:22px 24px; font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,'Courier New',Courier,monospace; font-size:13px; letter-spacing:0.5px; color:#8d9a90;">
+                    Date &amp; Time
+                  </td>
+                  <td class="detail-value" width="68%" valign="middle" style="padding:22px 24px 22px 0;">
+                    <span class="font-mono detail-value-text"
+                      style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,'Courier New',Courier,monospace; font-size:15px; line-height:24px; color:#e4ece6;">{{DATE_TIME}}</span>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- ---- SUCCESS NOTE ---- -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:30px;">
+                <tr>
+                  <td valign="top" width="40" style="padding:2px 16px 0 0; line-height:0;">
+                    <img src="https://cdn.jsdelivr.net/gh/SwayamGandhi01/neocloudz-templates@main/email-icons/icon-check.png"
+                      width="24" height="24" alt="✓"
+                      style="display:block; width:24px; height:24px; border:0;">
+                  </td>
+                  <td valign="top" style="padding:0;">
+                    <p class="font-sans success-text"
+                      style="margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:17px; line-height:26px; color:#dfe8e2;">
+                      This user has been successfully added to the waitlist and received a confirmation email.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- ---- WEBSITE LINK ---- -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:34px;">
+                <tr>
+                  <td style="padding:0 0 10px 0;">
+                    <span class="font-mono"
+                      style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,'Courier New',Courier,monospace; font-size:13px; letter-spacing:0.4px; color:#8d9a90;">NeoCloudz Website:</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td valign="middle" style="padding:0;">
+                          <a href="https://www.neocloudz.com" target="_blank" class="font-sans site-link"
+                            style="font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:17px; line-height:26px; font-weight:600; color:#22e06a; text-decoration:underline;">https://www.neocloudz.com</a>
+                        </td>
+                        <td valign="middle" style="padding:0 0 0 10px; line-height:0;">
+                          <a href="https://www.neocloudz.com" target="_blank" style="text-decoration:none;">
+                            <img src="https://cdn.jsdelivr.net/gh/SwayamGandhi01/neocloudz-templates@main/email-icons/icon-arrow.png"
+                              width="16" height="16" alt=""
+                              style="display:block; width:16px; height:16px; border:0;">
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- ============ DIVIDER ============ -->
+          <tr>
+            <td style="padding:0; line-height:0; font-size:0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td height="1" style="height:1px; background-color:#16261a; line-height:1px; font-size:0;">&nbsp;</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ============ FOOTER ============ -->
+          <tr>
+            <td class="px-outer section-pad-top section-pad-bottom"
+              style="background-color:#030703; padding:34px 40px 36px 40px;">
+
+              <!-- ---- SOCIAL ICONS ---- -->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 30px 0;">
+                <tr>
+                  <!-- X -->
+                  <td style="padding:0 10px 0 0;">
+                    <a href="https://x.com/neocloudz" target="_blank" style="text-decoration:none; display:block;">
+                      <img src="https://cdn.jsdelivr.net/gh/SwayamGandhi01/neocloudz-templates@main/email-icons/social-x.png" width="44" height="44" alt="X" class="social-icon"
+                        style="display:block; width:44px; height:44px; border:0; outline:none; color:#98a59b; font-family:Arial,sans-serif; font-size:11px;">
+                    </a>
+                  </td>
+                  <!-- LinkedIn -->
+                  <td style="padding:0 10px 0 0;">
+                    <a href="https://www.linkedin.com/company/neocloudz" target="_blank" style="text-decoration:none; display:block;">
+                      <img src="https://cdn.jsdelivr.net/gh/SwayamGandhi01/neocloudz-templates@main/email-icons/social-linkedin.png" width="44" height="44" alt="LinkedIn" class="social-icon"
+                        style="display:block; width:44px; height:44px; border:0; outline:none; color:#98a59b; font-family:Arial,sans-serif; font-size:11px;">
+                    </a>
+                  </td>
+                  <!-- Instagram -->
+                  <td style="padding:0;">
+                    <a href="https://www.instagram.com/neocloudz" target="_blank" style="text-decoration:none; display:block;">
+                      <img src="https://cdn.jsdelivr.net/gh/SwayamGandhi01/neocloudz-templates@main/email-icons/social-instagram.png" width="44" height="44" alt="Instagram" class="social-icon"
+                        style="display:block; width:44px; height:44px; border:0; outline:none; color:#98a59b; font-family:Arial,sans-serif; font-size:11px;">
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- ---- CONTACT INFORMATION ---- -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="padding:0 0 16px 0;">
+                    <span class="font-sans"
+                      style="font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:17px; line-height:24px; font-weight:700; color:#22e06a;">Contact Information</span>
+                  </td>
+                </tr>
+              </table>
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <!-- Direct Email -->
+                  <td class="contact-card" width="33.33%" valign="top" style="padding:0 6px 0 0;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                      class="contact-card-inner"
+                      style="width:100%; border:1px solid #1b2a20; border-radius:9px; background-color:#070d09;">
+                      <tr>
+                        <td style="padding:16px 16px 18px 16px;">
+                          <img src="https://cdn.jsdelivr.net/gh/SwayamGandhi01/neocloudz-templates@main/email-icons/icon-mail.png"
+                            width="20" height="20" alt=""
+                            style="display:block; width:20px; height:20px; border:0; margin-bottom:12px;">
+                          <div class="font-sans"
+                            style="font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:14px; line-height:20px; font-weight:700; color:#ffffff; padding-bottom:6px;">Direct Email</div>
+                          <a href="mailto:hello@neocloudz.com" class="font-sans"
+                            style="font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:13px; line-height:19px; color:#8d9a90; text-decoration:none; word-break:break-word;">hello@neocloudz.com</a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+
+                  <!-- Enterprise Solutions -->
+                  <td class="contact-card" width="33.33%" valign="top" style="padding:0 6px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                      class="contact-card-inner"
+                      style="width:100%; border:1px solid #1b2a20; border-radius:9px; background-color:#070d09;">
+                      <tr>
+                        <td style="padding:16px 16px 18px 16px;">
+                          <img src="https://cdn.jsdelivr.net/gh/SwayamGandhi01/neocloudz-templates@main/email-icons/icon-briefcase.png"
+                            width="20" height="20" alt=""
+                            style="display:block; width:20px; height:20px; border:0; margin-bottom:12px;">
+                          <div class="font-sans"
+                            style="font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:14px; line-height:20px; font-weight:700; color:#ffffff; padding-bottom:6px;">Enterprise Solutions</div>
+                          <a href="mailto:sales@neocloudz.com" class="font-sans"
+                            style="font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:13px; line-height:19px; color:#8d9a90; text-decoration:none; word-break:break-word;">sales@neocloudz.com</a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+
+                  <!-- SLA Support -->
+                  <td class="contact-card" width="33.33%" valign="top" style="padding:0 0 0 6px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                      class="contact-card-inner"
+                      style="width:100%; border:1px solid #1b2a20; border-radius:9px; background-color:#070d09;">
+                      <tr>
+                        <td style="padding:16px 16px 18px 16px;">
+                          <img src="https://cdn.jsdelivr.net/gh/SwayamGandhi01/neocloudz-templates@main/email-icons/icon-headset.png"
+                            width="20" height="20" alt=""
+                            style="display:block; width:20px; height:20px; border:0; margin-bottom:12px;">
+                          <div class="font-sans"
+                            style="font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:14px; line-height:20px; font-weight:700; color:#ffffff; padding-bottom:6px;">SLA Support</div>
+                          <a href="mailto:support@neocloudz.com" class="font-sans"
+                            style="font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:13px; line-height:19px; color:#8d9a90; text-decoration:none; word-break:break-word;">support@neocloudz.com</a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- ---- FOOTER RULE ---- -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:28px;">
+                <tr>
+                  <td height="1" style="height:1px; background-color:#16261a; line-height:1px; font-size:0;">&nbsp;</td>
+                </tr>
+              </table>
+
+              <!-- ---- LEGAL ---- -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:22px;">
+                <tr>
+                  <td style="padding:0 0 14px 0;">
+                    <span class="font-sans footer-note"
+                      style="font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:13px; line-height:20px; color:#c6d1c9;">&copy; 2026 NeoCloudz Inc. All rights reserved.</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0;">
+                    <p class="font-sans footer-note"
+                      style="margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:13px; line-height:21px; color:#6f7d73;">
+                      The future of AI compute starts here. Powered by DigiPower &bull; U.S. Tier III Data Centers TIA-942 Rated 3 &bull; SOC 2 Type I Compliant
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+        </table>
+        <!-- /MAIN CONTAINER -->
+
+        <!--[if mso]>
+        </td></tr></table>
+        <![endif]-->
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

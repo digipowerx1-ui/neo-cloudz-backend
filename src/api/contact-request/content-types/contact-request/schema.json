@@ -97,27 +97,6 @@
     "marketingOptIn": {
       "type": "boolean",
       "default": false
-    },
-    "originatingPage": {
-      "type": "string"
-    },
-    "originatingCta": {
-      "type": "string"
-    },
-    "utmSource": {
-      "type": "string"
-    },
-    "utmMedium": {
-      "type": "string"
-    },
-    "utmCampaign": {
-      "type": "string"
-    },
-    "utmTerm": {
-      "type": "string"
-    },
-    "utmContent": {
-      "type": "string"
     }
   }
 }

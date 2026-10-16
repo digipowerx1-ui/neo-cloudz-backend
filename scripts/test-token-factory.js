@@ -135,13 +135,6 @@ async function runSuite() {
       targetStartDate: '2027-01-15',
       interestedInGtcBerlin: true,
       marketingOptIn: false,
-      originatingPage: '/token-factory',
-      originatingCta: 'Request Early Access',
-      utmSource: 'newsletter',
-      utmMedium: 'email',
-      utmCampaign: 'gtc_berlin',
-      utmTerm: 'ai-inference',
-      utmContent: 'hero_cta',
     };
     validateContactRequest(payload);
   });
@@ -297,13 +290,6 @@ async function runSuite() {
       expectedUsage: 'High compute',
       targetStartDate: '2027-02-01',
       interestedInGtcBerlin: true,
-      originatingPage: '/token-factory-apply',
-      originatingCta: 'Apply Now',
-      utmSource: 'google',
-      utmMedium: 'cpc',
-      utmCampaign: 'gtc_berlin',
-      utmTerm: 'ai-clusters',
-      utmContent: 'ad_variant_1',
     };
 
     // When syncContactToHubSpot is called without token, it safely skips and returns { status: 'skipped' }
@@ -443,13 +429,6 @@ async function runSuite() {
         targetStartDate: '2027-01-15',
         interestedInGtcBerlin: true,
         marketingOptIn: false,
-        originatingPage: '/contact?interest=token-factory&intent=early-access',
-        originatingCta: 'Request Early Access',
-        utmSource: 'gtc_campaign',
-        utmMedium: 'social',
-        utmCampaign: 'gtc_berlin',
-        utmTerm: 'token-factory',
-        utmContent: 'announcement_banner',
       },
     };
     const res = await postJson('/api/contact-requests', payload);
@@ -482,13 +461,6 @@ async function runSuite() {
     assert.strictEqual(row.target_start_date, '2027-01-15');
     assert.strictEqual(row.interested_in_gtc_berlin, 1);
     assert.strictEqual(row.marketing_opt_in, 0);
-    assert.strictEqual(row.originating_page, '/contact?interest=token-factory&intent=early-access');
-    assert.strictEqual(row.originating_cta, 'Request Early Access');
-    assert.strictEqual(row.utm_source, 'gtc_campaign');
-    assert.strictEqual(row.utm_medium, 'social');
-    assert.strictEqual(row.utm_campaign, 'gtc_berlin');
-    assert.strictEqual(row.utm_term, 'token-factory');
-    assert.strictEqual(row.utm_content, 'announcement_banner');
 
     db.close();
   });

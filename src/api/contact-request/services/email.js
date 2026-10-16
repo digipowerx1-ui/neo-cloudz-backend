@@ -1,5 +1,8 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
+
 const resendService = require('../../../services/resend');
 
 /**
@@ -54,6 +57,127 @@ function renderDetailRow(label, rawValue) {
   `;
 }
 
+/**
+ * Prepares a single-line user-supplied value for safe inclusion in an HTML email.
+ *
+ * @param {*} value           - Raw value from the contact request
+ * @param {string} [fallback] - Text shown when the value is absent
+ * @returns {string} HTML-escaped, email-safe value
+ */
+function escapeForEmail(value, fallback = 'Not provided') {
+  if (value === null || value === undefined || String(value).trim() === '') {
+    return escapeHtml(fallback);
+  }
+  return escapeHtml(String(value).trim());
+}
+
+/**
+ * Same as escapeForEmail, but preserves the line breaks of multi-line text
+ * fields (message, models of interest, expected usage) as <br>.
+ * Escaping runs first, so those <br> tags are the only markup that can appear.
+ *
+ * @param {*} value           - Raw value from the contact request
+ * @param {string} [fallback] - Text shown when the value is absent
+ * @returns {string} HTML-escaped, email-safe value with <br> line breaks
+ */
+function escapeMultilineForEmail(value, fallback = 'Not provided') {
+  return escapeForEmail(value, fallback).replace(/\r\n|\r|\n/g, '<br>');
+}
+
+// ---------------------------------------------------------------------------
+// HTML template loading
+// ---------------------------------------------------------------------------
+
+/**
+ * Directory holding the standalone HTML email templates.
+ *
+ * Resolved from this module's own location (__dirname) rather than the process
+ * working directory, so it behaves identically however Strapi is started.
+ * src/api/contact-request/services -> src/neocloudz-templates
+ */
+const TEMPLATE_DIR = path.join(__dirname, '..', '..', '..', 'neocloudz-templates');
+
+const EARLY_ACCESS_ADMIN_TEMPLATE = 'early-access-admin-notification.html';
+const GENERAL_CONTACT_ADMIN_TEMPLATE = 'general-contact-admin-notification.html';
+
+/** In-memory template cache, keyed by file name. */
+const templateCache = new Map();
+
+/**
+ * Reads an HTML email template from disk as UTF-8 and caches it.
+ *
+ * Throws rather than returning an empty or partial document, so a missing or
+ * unreadable template is logged by the lifecycle hook instead of resulting in
+ * a broken email being delivered.
+ *
+ * @param {string} fileName - Template file name inside TEMPLATE_DIR
+ * @returns {string} Raw template HTML
+ */
+function loadTemplate(fileName) {
+  const cached = templateCache.get(fileName);
+  if (cached) return cached;
+
+  const templatePath = path.join(TEMPLATE_DIR, fileName);
+
+  let raw;
+  try {
+    raw = fs.readFileSync(templatePath, 'utf8');
+  } catch (err) {
+    throw new Error(
+      `Unable to read email template "${fileName}" from ${templatePath} (${err.code || 'read error'})`
+    );
+  }
+
+  if (raw.trim() === '') {
+    throw new Error(`Email template "${fileName}" at ${templatePath} is empty.`);
+  }
+
+  templateCache.set(fileName, raw);
+  return raw;
+}
+
+/**
+ * Substitutes {{TOKEN}} placeholders in a template with pre-escaped values.
+ *
+ * Substitution is a single pass over the template, so a submitted value that
+ * itself contains placeholder-like text (for example a message containing the
+ * literal "{{WORK_EMAIL}}") is never re-scanned and replaced.
+ *
+ * @param {string} template     - Template HTML containing {{TOKEN}} markers
+ * @param {Object} replacements - Map of TOKEN -> already HTML-escaped value
+ * @returns {string} Rendered HTML
+ */
+function renderTemplate(template, replacements) {
+  const unresolved = new Set();
+
+  const html = template.replace(/\{\{([A-Z0-9_]+)\}\}/g, (match, token) => {
+    if (Object.prototype.hasOwnProperty.call(replacements, token)) {
+      return replacements[token];
+    }
+    unresolved.add(token);
+    return match;
+  });
+
+  if (unresolved.size > 0) {
+    // Field names only - never the submitted values.
+    strapi.log.warn(
+      `[Email] Template placeholders had no mapped value: ${[...unresolved].join(', ')}`
+    );
+  }
+
+  return html;
+}
+
+/** Human-readable labels for the enumeration values stored by Strapi. */
+const REQUEST_TYPE_LABELS = {
+  early_access: 'Early Access',
+  general_contact: 'General Contact',
+};
+
+const PRODUCT_INTEREST_LABELS = {
+  token_factory: 'Token Factory',
+};
+
 // ---------------------------------------------------------------------------
 // 1. ADMIN NOTIFICATION
 // ---------------------------------------------------------------------------
@@ -70,282 +194,27 @@ async function sendAdminNotification(data) {
 
   const adminEmail = process.env.ADMIN_EMAIL || 'hello@neocloudz.com';
 
-  const fullName     = escapeHtml(data.fullName     || 'N/A');
-  const workEmail    = escapeHtml(data.workEmail    || 'N/A');
-  const phoneNumber  = escapeHtml(data.phoneNumber  || 'N/A');
-  const company      = escapeHtml(data.company      || 'N/A');
-  const interestType = escapeHtml(data.interestType || 'N/A');
-  const budgetRange  = escapeHtml(data.budgetRange  || 'N/A');
-  const message      = escapeHtml(data.message      || 'No message provided.');
-  const source       = escapeHtml(data.source       || 'N/A');
+  // Raw values: used for the subject, the log line and the plain-text body.
+  // HTML escaping is applied per placeholder when the template is rendered.
+  const fullName     = data.fullName     || 'N/A';
+  const workEmail    = data.workEmail    || 'N/A';
+  const phoneNumber  = data.phoneNumber  || 'N/A';
+  const company      = data.company      || 'N/A';
+  const interestType = data.interestType || 'N/A';
+  const budgetRange  = data.budgetRange  || 'N/A';
+  const message      = data.message      || 'No message provided.';
+  const source       = data.source       || 'N/A';
 
-  const emailHtml = `<!DOCTYPE html>
-<html lang="en">
-
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>New Contact Request Received</title>
-  <style>
-    body,
-    table,
-    td,
-    a {
-      -webkit-text-size-adjust: 100%;
-      -ms-text-size-adjust: 100%;
-    }
-
-    table,
-    td {
-      mso-table-lspace: 0pt;
-      mso-table-rspace: 0pt;
-    }
-
-    img {
-      -ms-interpolation-mode: bicubic;
-      border: 0;
-      height: auto;
-      line-height: 100%;
-      outline: none;
-      text-decoration: none;
-    }
-
-    table {
-      border-collapse: collapse !important;
-    }
-
-    body {
-      height: 100% !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      width: 100% !important;
-      background-color: #050505;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      color: #ffffff;
-    }
-
-    @media screen and (max-width: 600px) {
-      .email-container {
-        width: 100% !important;
-        padding-left: 10px !important;
-        padding-right: 10px !important;
-      }
-
-      .details-table td {
-        display: block !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
-      }
-
-      .details-table tr {
-        margin-bottom: 10px !important;
-        display: block !important;
-      }
-
-      .details-spacer {
-        display: none !important;
-      }
-
-      .details-label {
-        margin-bottom: 6px !important;
-      }
-    }
-  </style>
-</head>
-
-<body style="margin: 0; padding: 0; background-color: #050505; color: #ffffff;">
-
-  <table border="0" cellpadding="0" cellspacing="0" width="100%"
-    style="background-color: #050505; table-layout: fixed;">
-    <tr>
-      <td align="center" style="padding: 20px 0;">
-
-        <table border="0" cellpadding="0" cellspacing="0" width="600" class="email-container"
-          style="background-color: #050505; max-width: 600px; width: 100%;">
-
-          <!-- HEADER: Logo -->
-          <tr>
-            <td align="left" style="padding: 20px 20px 10px 20px;">
-              <img src="https://www.neocloudz.com/images/neocloudz-logo.png" alt="NeoCloudz" height="45"
-                style="display: block; height: 100px; width: auto;" />
-            </td>
-          </tr>
-
-          <!-- HEADER: Title -->
-          <tr>
-            <td align="center" style="padding: 10px 20px 20px 20px;">
-              <h1
-                style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 28px; font-weight: 700; line-height: 1.3; color: #ffffff; text-align: center;">
-                New Contact Request<br>
-                <span style="color: #00ff66;">Received</span>
-              </h1>
-            </td>
-          </tr>
-
-          <!-- ALERT BADGE -->
-          <tr>
-            <td align="center" style="padding: 0 20px 20px 20px;">
-              <table border="0" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td align="center"
-                    style="background-color: #00ff6622; border: 1px solid #00ff66; border-radius: 20px; padding: 8px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 600; color: #00ff66; letter-spacing: 1px; text-transform: uppercase;">
-                    Action Required — Review Submission
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <!-- FORM DETAILS SECTION -->
-          <tr>
-            <td align="center" style="padding: 10px 20px;">
-              <table border="0" cellpadding="0" cellspacing="0" width="100%" class="details-table">
-
-                <!-- Full Name -->
-                <tr>
-                  <td class="details-label" width="32%"
-                    style="padding: 12px; background-color: #000000; border: 1px solid #00ff66; border-radius: 4px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 600; color: #ffffff;">
-                    Full Name
-                  </td>
-                  <td class="details-spacer" width="2%" style="font-size: 0; line-height: 0;">&nbsp;</td>
-                  <td class="details-value" width="66%"
-                    style="padding: 12px; background-color: #000000; border: 1px solid #00ff66; border-radius: 4px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; color: #a3a3a3;">
-                    ${fullName}
-                  </td>
-                </tr>
-                <tr><td height="8" colspan="3" style="font-size: 0; line-height: 0;">&nbsp;</td></tr>
-
-                <!-- Work Email -->
-                <tr>
-                  <td class="details-label" width="32%"
-                    style="padding: 12px; background-color: #000000; border: 1px solid #00ff66; border-radius: 4px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 600; color: #ffffff;">
-                    Work Email
-                  </td>
-                  <td class="details-spacer" width="2%" style="font-size: 0; line-height: 0;">&nbsp;</td>
-                  <td class="details-value" width="66%"
-                    style="padding: 12px; background-color: #000000; border: 1px solid #00ff66; border-radius: 4px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; color: #a3a3a3;">
-                    ${workEmail}
-                  </td>
-                </tr>
-                <tr><td height="8" colspan="3" style="font-size: 0; line-height: 0;">&nbsp;</td></tr>
-
-                <!-- Phone -->
-                <tr>
-                  <td class="details-label" width="32%"
-                    style="padding: 12px; background-color: #000000; border: 1px solid #00ff66; border-radius: 4px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 600; color: #ffffff;">
-                    Phone
-                  </td>
-                  <td class="details-spacer" width="2%" style="font-size: 0; line-height: 0;">&nbsp;</td>
-                  <td class="details-value" width="66%"
-                    style="padding: 12px; background-color: #000000; border: 1px solid #00ff66; border-radius: 4px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; color: #a3a3a3;">
-                    ${phoneNumber}
-                  </td>
-                </tr>
-                <tr><td height="8" colspan="3" style="font-size: 0; line-height: 0;">&nbsp;</td></tr>
-
-                <!-- Company -->
-                <tr>
-                  <td class="details-label" width="32%"
-                    style="padding: 12px; background-color: #000000; border: 1px solid #00ff66; border-radius: 4px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 600; color: #ffffff;">
-                    Company
-                  </td>
-                  <td class="details-spacer" width="2%" style="font-size: 0; line-height: 0;">&nbsp;</td>
-                  <td class="details-value" width="66%"
-                    style="padding: 12px; background-color: #000000; border: 1px solid #00ff66; border-radius: 4px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; color: #a3a3a3;">
-                    ${company}
-                  </td>
-                </tr>
-                <tr><td height="8" colspan="3" style="font-size: 0; line-height: 0;">&nbsp;</td></tr>
-
-                <!-- Interest Type -->
-                <tr>
-                  <td class="details-label" width="32%"
-                    style="padding: 12px; background-color: #000000; border: 1px solid #00ff66; border-radius: 4px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 600; color: #ffffff;">
-                    Interest Type
-                  </td>
-                  <td class="details-spacer" width="2%" style="font-size: 0; line-height: 0;">&nbsp;</td>
-                  <td class="details-value" width="66%"
-                    style="padding: 12px; background-color: #000000; border: 1px solid #00ff66; border-radius: 4px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; color: #a3a3a3;">
-                    ${interestType}
-                  </td>
-                </tr>
-                <tr><td height="8" colspan="3" style="font-size: 0; line-height: 0;">&nbsp;</td></tr>
-
-                <!-- Budget Range -->
-                <tr>
-                  <td class="details-label" width="32%"
-                    style="padding: 12px; background-color: #000000; border: 1px solid #00ff66; border-radius: 4px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 600; color: #ffffff;">
-                    Budget Range
-                  </td>
-                  <td class="details-spacer" width="2%" style="font-size: 0; line-height: 0;">&nbsp;</td>
-                  <td class="details-value" width="66%"
-                    style="padding: 12px; background-color: #000000; border: 1px solid #00ff66; border-radius: 4px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; color: #a3a3a3;">
-                    ${budgetRange}
-                  </td>
-                </tr>
-                <tr><td height="8" colspan="3" style="font-size: 0; line-height: 0;">&nbsp;</td></tr>
-
-                <!-- Message -->
-                <tr>
-                  <td class="details-label" width="32%"
-                    style="padding: 12px; background-color: #000000; border: 1px solid #00ff66; border-radius: 4px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 600; color: #ffffff;">
-                    Message
-                  </td>
-                  <td class="details-spacer" width="2%" style="font-size: 0; line-height: 0;">&nbsp;</td>
-                  <td class="details-value" width="66%"
-                    style="padding: 12px; background-color: #000000; border: 1px solid #00ff66; border-radius: 4px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; color: #a3a3a3;">
-                    ${message}
-                  </td>
-                </tr>
-                <tr><td height="8" colspan="3" style="font-size: 0; line-height: 0;">&nbsp;</td></tr>
-
-                <!-- Source -->
-                <tr>
-                  <td class="details-label" width="32%"
-                    style="padding: 12px; background-color: #000000; border: 1px solid #00ff66; border-radius: 4px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 600; color: #ffffff;">
-                    Source
-                  </td>
-                  <td class="details-spacer" width="2%" style="font-size: 0; line-height: 0;">&nbsp;</td>
-                  <td class="details-value" width="66%"
-                    style="padding: 12px; background-color: #000000; border: 1px solid #00ff66; border-radius: 4px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; color: #a3a3a3;">
-                    ${source}
-                  </td>
-                </tr>
-
-              </table>
-            </td>
-          </tr>
-
-          <!-- DIVIDER LINE -->
-          <tr>
-            <td align="center" style="padding: 30px 20px 10px 20px;">
-              <hr style="border: 0; border-top: 1px solid #222222; margin: 0;">
-            </td>
-          </tr>
-
-          <!-- COPYRIGHT -->
-          <tr>
-            <td align="center"
-              style="padding: 10px 20px 20px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 12px; line-height: 1.6; text-align: center;">
-              <p style="margin: 0 0 5px 0;">
-                <a href="mailto:hello@neocloudz.com"
-                  style="color: #00ff66; text-decoration: underline;">hello@neocloudz.com</a>
-              </p>
-              <p style="margin: 0; color: #666666;">
-                &copy; 2026 NeoCloudz Inc. All rights reserved.
-              </p>
-            </td>
-          </tr>
-
-        </table>
-
-      </td>
-    </tr>
-  </table>
-
-</body>
-
-</html>`;
+  const emailHtml = renderTemplate(loadTemplate(GENERAL_CONTACT_ADMIN_TEMPLATE), {
+    FULL_NAME:     escapeForEmail(data.fullName),
+    WORK_EMAIL:    escapeForEmail(data.workEmail),
+    COMPANY:       escapeForEmail(data.company),
+    PHONE_NUMBER:  escapeForEmail(data.phoneNumber),
+    INTEREST_TYPE: escapeForEmail(data.interestType),
+    BUDGET_RANGE:  escapeForEmail(data.budgetRange),
+    SOURCE:        escapeForEmail(data.source),
+    MESSAGE:       escapeMultilineForEmail(data.message, 'No message provided.'),
+  });
 
   const textBody = `
 New Contact Request Received
@@ -707,45 +576,28 @@ async function sendUserConfirmation(data) {
             <td align="center" style="padding: 20px 20px 10px 20px;">
               <table border="0" cellpadding="0" cellspacing="0">
                 <tr>
-                  <!-- Facebook -->
-                  <td style="padding: 0 10px;">
-                    <a href="https://facebook.com/neocloudz" target="_blank" style="text-decoration: none;">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00ff66" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round" style="display: block;">
-                        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
-                      </svg>
-                    </a>
-                  </td>
                   <!-- Instagram -->
                   <td style="padding: 0 10px;">
-                    <a href="https://instagram.com/neocloudz" target="_blank" style="text-decoration: none;">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00ff66" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round" style="display: block;">
-                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-                      </svg>
+                    <a href="https://instagram.com/neocloudz" target="_blank" style="text-decoration: none; display: block;">
+                      <img src="https://cdn.jsdelivr.net/gh/SwayamGandhi01/neocloudz-templates@main/email-icons/social-instagram.png"
+                        width="44" height="44" alt="Instagram"
+                        style="display: block; width: 44px; height: 44px; border: 0; outline: none; color: #98a59b; font-family: Arial, sans-serif; font-size: 11px;">
                     </a>
                   </td>
                   <!-- X (Twitter) -->
                   <td style="padding: 0 10px;">
-                    <a href="https://x.com/neocloudz" target="_blank" style="text-decoration: none;">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00ff66" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round" style="display: block;">
-                        <path d="M4 4l11.733 16h4.267l-11.733 -16z"></path>
-                        <path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"></path>
-                      </svg>
+                    <a href="https://x.com/neocloudz" target="_blank" style="text-decoration: none; display: block;">
+                      <img src="https://cdn.jsdelivr.net/gh/SwayamGandhi01/neocloudz-templates@main/email-icons/social-x.png"
+                        width="44" height="44" alt="X"
+                        style="display: block; width: 44px; height: 44px; border: 0; outline: none; color: #98a59b; font-family: Arial, sans-serif; font-size: 11px;">
                     </a>
                   </td>
                   <!-- LinkedIn -->
                   <td style="padding: 0 10px;">
-                    <a href="https://linkedin.com/company/neocloudz" target="_blank" style="text-decoration: none;">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00ff66" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round" style="display: block;">
-                        <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
-                        <rect x="2" y="9" width="4" height="12"></rect>
-                        <circle cx="4" cy="4" r="2"></circle>
-                      </svg>
+                    <a href="https://linkedin.com/company/neocloudz" target="_blank" style="text-decoration: none; display: block;">
+                      <img src="https://cdn.jsdelivr.net/gh/SwayamGandhi01/neocloudz-templates@main/email-icons/social-linkedin.png"
+                        width="44" height="44" alt="LinkedIn"
+                        style="display: block; width: 44px; height: 44px; border: 0; outline: none; color: #98a59b; font-family: Arial, sans-serif; font-size: 11px;">
                     </a>
                   </td>
                 </tr>
@@ -838,105 +690,22 @@ async function sendEarlyAccessAdminNotification(data) {
   const targetStartDate      = data.targetStartDate || '';
   const interestedInGtcBerlin = data.interestedInGtcBerlin ? 'Yes' : 'No';
   const marketingOptIn       = data.marketingOptIn ? 'Yes (Opted In)' : 'No';
-  const originatingPage      = data.originatingPage || '';
-  const originatingCta       = data.originatingCta || '';
-  const utmSource            = data.utmSource || '';
-  const utmMedium            = data.utmMedium || '';
-  const utmCampaign          = data.utmCampaign || '';
-  const utmTerm              = data.utmTerm || '';
-  const utmContent           = data.utmContent || '';
 
-  const emailHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Token Factory Early Access Request</title>
-  <style>
-    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-    table { border-collapse: collapse !important; }
-    body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #050505; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #ffffff; }
-    @media screen and (max-width: 600px) {
-      .email-container { width: 100% !important; padding-left: 10px !important; padding-right: 10px !important; }
-      .details-table td { display: block !important; width: 100% !important; box-sizing: border-box !important; }
-      .details-table tr { margin-bottom: 10px !important; display: block !important; }
-      .details-spacer { display: none !important; }
-    }
-  </style>
-</head>
-<body style="margin: 0; padding: 0; background-color: #050505; color: #ffffff;">
-  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #050505; table-layout: fixed;">
-    <tr>
-      <td align="center" style="padding: 20px 0;">
-        <table border="0" cellpadding="0" cellspacing="0" width="600" class="email-container" style="background-color: #050505; max-width: 600px; width: 100%;">
-          <tr>
-            <td align="left" style="padding: 20px 20px 10px 20px;">
-              <img src="https://www.neocloudz.com/images/neocloudz-logo.png" alt="NeoCloudz" height="45" style="display: block; height: 100px; width: auto;" />
-            </td>
-          </tr>
-          <tr>
-            <td align="center" style="padding: 10px 20px 20px 20px;">
-              <h1 style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 26px; font-weight: 700; line-height: 1.3; color: #ffffff; text-align: center;">
-                Token Factory Early Access<br>
-                <span style="color: #00ff66;">Request Received</span>
-              </h1>
-            </td>
-          </tr>
-          <tr>
-            <td align="center" style="padding: 0 20px 20px 20px;">
-              <table border="0" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td align="center" style="background-color: #00ff6622; border: 1px solid #00ff66; border-radius: 20px; padding: 8px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 600; color: #00ff66; letter-spacing: 1px; text-transform: uppercase;">
-                    Token Factory — Prospect Qualification
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td align="center" style="padding: 10px 20px;">
-              <table border="0" cellpadding="0" cellspacing="0" width="100%" class="details-table">
-                ${renderDetailRow('Product Interest', 'Token Factory')}
-                ${renderDetailRow('Request Type', 'Early Access')}
-                ${renderDetailRow('Full Name', fullName)}
-                ${renderDetailRow('Work Email', workEmail)}
-                ${renderDetailRow('Company', company)}
-                ${renderDetailRow('Phone', phoneNumber)}
-                ${renderDetailRow('Use Case / Workload', message)}
-                ${renderDetailRow('Models of Interest', modelsOfInterest)}
-                ${renderDetailRow('Endpoint Preference', endpointPreference)}
-                ${renderDetailRow('Expected Usage', expectedUsage)}
-                ${renderDetailRow('Target Start Date', targetStartDate)}
-                ${renderDetailRow('Meet at GTC Berlin', interestedInGtcBerlin)}
-                ${renderDetailRow('Marketing Consent', marketingOptIn)}
-                ${renderDetailRow('Originating Page', originatingPage)}
-                ${renderDetailRow('Originating CTA', originatingCta)}
-                ${renderDetailRow('UTM Source', utmSource)}
-                ${renderDetailRow('UTM Medium', utmMedium)}
-                ${renderDetailRow('UTM Campaign', utmCampaign)}
-                ${renderDetailRow('UTM Term', utmTerm)}
-                ${renderDetailRow('UTM Content', utmContent)}
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td align="center" style="padding: 30px 20px 10px 20px;">
-              <hr style="border: 0; border-top: 1px solid #222222; margin: 0;">
-            </td>
-          </tr>
-          <tr>
-            <td align="center" style="padding: 10px 20px 20px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 12px; line-height: 1.6; text-align: center;">
-              <p style="margin: 0 0 5px 0;"><a href="mailto:hello@neocloudz.com" style="color: #00ff66; text-decoration: underline;">hello@neocloudz.com</a></p>
-              <p style="margin: 0; color: #666666;">&copy; 2026 NeoCloudz Inc. All rights reserved.</p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
+  const emailHtml = renderTemplate(loadTemplate(EARLY_ACCESS_ADMIN_TEMPLATE), {
+    PRODUCT_INTEREST:    escapeForEmail(PRODUCT_INTEREST_LABELS[data.productInterest] || data.productInterest, 'Token Factory'),
+    REQUEST_TYPE:        escapeForEmail(REQUEST_TYPE_LABELS[data.requestType] || data.requestType, 'Early Access'),
+    FULL_NAME:           escapeForEmail(data.fullName),
+    WORK_EMAIL:          escapeForEmail(data.workEmail),
+    COMPANY:             escapeForEmail(data.company),
+    PHONE_NUMBER:        escapeForEmail(phoneNumber),
+    MESSAGE:             escapeMultilineForEmail(data.message),
+    MODELS_OF_INTEREST:  escapeMultilineForEmail(modelsOfInterest),
+    ENDPOINT_PREFERENCE: escapeForEmail(endpointPreference),
+    EXPECTED_USAGE:      escapeMultilineForEmail(expectedUsage),
+    TARGET_START_DATE:   escapeForEmail(targetStartDate),
+    GTC_BERLIN:          escapeForEmail(interestedInGtcBerlin),
+    MARKETING_OPT_IN:    escapeForEmail(marketingOptIn),
+  });
 
   const textBody = `
 Token Factory Early Access Request
@@ -960,15 +729,6 @@ ${expectedUsage || 'N/A'}
 
 Use Case / Workload:
 ${message}
-
-Attribution:
-  Originating Page: ${originatingPage || 'N/A'}
-  Originating CTA:  ${originatingCta || 'N/A'}
-  UTM Source:       ${utmSource || 'N/A'}
-  UTM Medium:       ${utmMedium || 'N/A'}
-  UTM Campaign:     ${utmCampaign || 'N/A'}
-  UTM Term:         ${utmTerm || 'N/A'}
-  UTM Content:      ${utmContent || 'N/A'}
   `.trim();
 
   strapi.log.info(`[Email] Sending Token Factory early access admin notification to ${adminEmail} for ${workEmail}...`);
